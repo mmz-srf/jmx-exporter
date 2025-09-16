@@ -42,9 +42,8 @@ jobs:
             type=schedule
             type=ref,event=branch
             type=sha
-            type=raw,value=jmx_exporter-${{ github.event.inputs.jmx_exporter_version }}
+            type=raw,value=jmx_exporter-${{ github.event.inputs.jmx_exporter_version || '1.4.0' }}
             type=raw,value=${{ github.repository.tag_name }}
-            type=raw,value=latest
 
       -   name: Build and push Docker images
           id: push
@@ -55,6 +54,6 @@ jobs:
             tags: ${{ steps.meta.outputs.tags }}
             labels: ${{ steps.meta.outputs.labels }}
             build-args: |
-              JMX_EXPORTER_VERSION=${{ github.event.inputs.jmx_exporter_version }}
+              JMX_EXPORTER_VERSION=${{ github.event.inputs.jmx_exporter_version || '1.4.0' }}
             platforms: linux/amd64,linux/arm/v7,linux/arm64/v8
-            outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Prometheus jmx-exporter https://prometheus.github.io/jmx_exporter/${{ github.event.inputs.jmx_exporter_version }}/,annotation-index.org.opencontainers.image.version=${{ github.event.inputs.jmx_exporter_version }}
+            outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Prometheus jmx-exporter https://prometheus.github.io/jmx_exporter/${{ github.event.inputs.jmx_exporter_version || '1.4.0' }}/,annotation-index.org.opencontainers.image.version=${{ github.event.inputs.jmx_exporter_version || '1.4.0' }}
