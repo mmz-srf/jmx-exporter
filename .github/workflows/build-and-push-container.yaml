@@ -7,6 +7,11 @@ on:
     tags:
       - 'v*.*.*'
   workflow_dispatch:
+    inputs:
+      tag:
+        required: true
+        description: 'Tag to build (e.g., v1.2.3)'
+
 
 jobs:
   docker:
@@ -14,6 +19,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag }}
 
       - name: Read version from file and set output
         id: jmx_version
