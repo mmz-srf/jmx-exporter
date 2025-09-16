@@ -10,9 +10,9 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      - name: Read version from version.txt
+      - name: Read version from jmx_exporter_version.txt
         id: version
-        run: echo "JMX_EXPORTER_VERSION=$(cat version.txt)" >> $GITHUB_ENV
+        run: echo "JMX_EXPORTER_VERSION=$(cat jmx_exporter_version.txt)" >> $GITHUB_ENV
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
