@@ -56,5 +56,5 @@ jobs:
             tags: ${{ steps.meta.outputs.tags }}
             labels: ${{ steps.meta.outputs.labels }}
             build-args: |
-              JMX_EXPORTER_VERSION={{ JMX_EXPORTER_VERSION }}
+              JMX_EXPORTER_VERSION=${{ github.event.inputs.jmx_exporter_version }}
             platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm64/v8
