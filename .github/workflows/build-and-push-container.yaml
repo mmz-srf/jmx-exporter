@@ -1,6 +1,11 @@
 name: Build and Push Docker Container
 
 on:
+  push:
+    branches:
+      - 'develop-*'
+    tags:
+      - 'v*.*.*'
   workflow_dispatch:
 
 jobs:
@@ -16,13 +21,6 @@ jobs:
           VERSION=$(cat jmx_exporter_version.txt)
           echo "VERSION=$VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - uses: actions-ecosystem/action-get-latest-tag@v1
-        id: get-latest-tag
-
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ steps.get-latest-tag.outputs.tag }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -44,12 +42,12 @@ jobs:
           images: |
             ghcr.io/${{ github.repository }}
           tags: |
-            type=schedule
             type=ref,event=branch
             type=sha
-            type=raw,value=latest
-            type=raw,value=main
-            type=semver,pattern={{major}}.{{minor}}.{{patch}}
+            type=schedule,pattern={{date 'YYYYMMDD'}},prefix=dev-,match=develop-*
+            type=semver,pattern={{major}}.{{minor}}.{{patch}},prefix=int-,match=v(\d.\d.\d)$,priority=1100
+            type=semver,pattern={{major}}.{{minor}}.{{patch}},match=v(\d.\d.\d)$,enable={{is_default_branch}},priority=1100
+            type=raw,value=latest,enable={{is_default_branch}},priority=900
 
       -   name: Build and push Docker images
           id: push
