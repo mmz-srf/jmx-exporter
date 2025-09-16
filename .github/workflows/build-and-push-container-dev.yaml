@@ -15,14 +15,6 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      - name: 'Get Previous tag'
-        id: previoustag
-        uses: "WyriHaximus/github-action-get-previous-tag@v1"
-
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ steps.previoustag.outputs.tag }}
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -44,9 +36,7 @@ jobs:
             ghcr.io/${{ github.repository }}
           tags: |
             type=schedule
-            type=semver,pattern=dev-v{{major}}.{{minor}}.{{patch}}
             type=ref,event=branch
-            type=ref,event=pr
             type=sha
             type=raw,value=jmx_exporter-${{ github.event.inputs.jmx_exporter_version }}
             type=raw,value=latest
