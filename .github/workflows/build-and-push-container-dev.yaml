@@ -1,9 +1,11 @@
-name: Build and Push Docker Container DEV
+name: Build and Push Docker Container
 
 on:
   push:
     branches:
-      - 'dev*'
+      - 'develop-*'
+    tags:
+      - 'v*.*.*'
   workflow_dispatch:
 
 jobs:
@@ -13,9 +15,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Read version from jmx_exporter_version.txt
-        id: version
-        run: echo "JMX_EXPORTER_VERSION=$(cat jmx_exporter_version.txt)" >> $GITHUB_ENV
+      - name: Read version from file and set output
+        id: jmx_version
+        run: |
+          VERSION=$(cat jmx_exporter_version.txt)
+          echo "VERSION=$VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -40,8 +45,8 @@ jobs:
             type=schedule
             type=ref,event=branch
             type=sha
-            type=raw,value=jmx_exporter-${{ env.JMX_EXPORTER_VERSION }}
-            type=raw,value=latest
+            type=schedule,pattern={{date 'YYYYMMDD'}},prefix=dev-,match=develop-*
+            type=semver,pattern={{major}}.{{minor}}.{{patch}},prefix=int-,match=v(\d.\d.\d)$
 
       -   name: Build and push Docker images
           id: push
@@ -52,6 +57,6 @@ jobs:
             tags: ${{ steps.meta.outputs.tags }}
             labels: ${{ steps.meta.outputs.labels }}
             build-args: |
-              JMX_EXPORTER_VERSION=${{ env.JMX_EXPORTER_VERSION }}
+              JMX_EXPORTER_VERSION=${{ steps.jmx_version.outputs.version }}
             platforms: linux/amd64,linux/arm/v7,linux/arm64/v8
-            outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Prometheus jmx-exporter https://prometheus.github.io/jmx_exporter/${{ env.JMX_EXPORTER_VERSION }}/,annotation-index.org.opencontainers.image.version=${{ env.JMX_EXPORTER_VERSION }}
+            outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Prometheus jmx-exporter https://prometheus.github.io/jmx_exporter/${{ steps.jmx_version.outputs.version }}/,annotation-index.org.opencontainers.image.version=${{ steps.jmx_version.outputs.version }}
