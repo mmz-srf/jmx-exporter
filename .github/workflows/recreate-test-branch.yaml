@@ -1,0 +1,41 @@
+name: Recreate Develop from Main Branch
+
+on:
+  schedule:
+   - cron: '15 21 * * 0'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: delete develop branches
+        run: |
+          git fetch
+          git branch -r | awk -F/ '/\/develop/{print $2}' | xargs -I {} git push origin :{}
+      - name: recreate develop branch
+        run: |
+          DEVELOPBRANCH=develop-$(date +"%Y-%m-%d")
+
+          echo "Setup git config"
+          git config --global user.email "deploybot@srf.ch"
+          git config --global user.name "Deploy Bot"
+
+          echo "Update Origin with access token"
+          # update remote and prune old branches
+          git remote remove origin
+          git remote add origin https://${{ secrets.GLOBAL_GITHUB_ACCESS_TOKEN }}@github.com/mmz-srf/jmx-exporter
+
+          echo "Remote update"
+          git remote update
+          echo "Fetch"
+          git fetch -p
+          git remote update
+
+          echo "Pull main"
+          git checkout main
+          git pull origin main
+
+          git checkout -b ${DEVELOPBRANCH}
+          git push origin ${DEVELOPBRANCH}
