@@ -44,7 +44,6 @@ jobs:
           tags: |
             type=ref,event=branch
             type=sha
-            type=schedule,pattern={{date 'YYYYMMDD'}},prefix=dev-,match=develop-*
             type=semver,pattern={{major}}.{{minor}}.{{patch}},prefix=int-,match=v(\d.\d.\d)$,priority=1100
             type=semver,pattern={{major}}.{{minor}}.{{patch}},match=v(\d.\d.\d)$,enable={{is_default_branch}},priority=1100
             type=raw,value=latest,enable={{is_default_branch}},priority=900
