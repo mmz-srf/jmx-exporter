@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'Dockerfile'
+      - '.github/workflows/build-and-push-container.yaml'
+
   workflow_dispatch:
     inputs:
       jmx_exporter_version:
@@ -53,6 +57,8 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=sha
+            type=latest
+            type=raw,value=${{ github.event.inputs.jmx_exporter_version }}
 
       -   name: Build and push Docker images
           id: push
@@ -65,4 +71,4 @@ jobs:
             build-args: |
               JMX_EXPORTER_VERSION=${{ github.event.inputs.jmx_exporter_version }}
             platforms: linux/amd64,linux/arm/v7,linux/arm64/v8
-            outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=jmx-exporter,annotation-index.org.opencontainers.image.version=${{ github.event.inputs.jmx_exporter_version }}
+            outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Prometheus jmx-exporter https://prometheus.github.io/jmx_exporter/${{ github.event.inputs.jmx_exporter_version }}/,annotation-index.org.opencontainers.image.version=${{ github.event.inputs.jmx_exporter_version }}
