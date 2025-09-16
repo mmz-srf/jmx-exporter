@@ -46,7 +46,7 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=sha
-            type=raw,value=${{ github.event.inputs.jmx_exporter_version }}
+            type=raw,value=jmx_exporter-${{ github.event.inputs.jmx_exporter_version }}
             type=raw,value=latest
 
       -   name: Build and push Docker images
