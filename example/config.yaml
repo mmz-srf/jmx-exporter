@@ -1,0 +1,9 @@
+jmxUrl: service:jmx:rmi:///jndi/rmi://127.0.0.1:9999/jmxrmi
+startDelaySeconds: 0
+ssl: false
+includeObjectNames:
+  - "java.lang:type=ClassLoading"
+  - "java.lang:type=Compilation"
+  - "java.lang:type=GarbageCollector,*"
+  - "java.lang:type=Memory"
+  - "java.lang:type=MemoryPool,*"
