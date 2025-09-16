@@ -15,8 +15,7 @@ LABEL org.opencontainers.image.version="${JMX_EXPORTER_VERSION}"
 RUN mkdir -p /opt/jmx_exporter
 
 # Download JMX exporter jar and configuration file
-RUN mkdir -p /temp && \
-    curl -L https://github.com/prometheus/jmx_exporter/releases/download/${JMX_EXPORTER_VERSION}/jmx_prometheus_standalone-${JMX_EXPORTER_VERSION}.jar \
+RUN curl -L https://github.com/prometheus/jmx_exporter/releases/download/${JMX_EXPORTER_VERSION}/jmx_prometheus_standalone-${JMX_EXPORTER_VERSION}.jar \
     -o /opt/jmx_exporter/jmx_prometheus_standalone.jar
 
 # Use a non-root user
