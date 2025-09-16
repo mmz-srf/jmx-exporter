@@ -12,6 +12,9 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Read version from jmx_exporter_version.txt
         id: version
         run: echo "JMX_EXPORTER_VERSION=$(cat jmx_exporter_version.txt)" >> $GITHUB_ENV
