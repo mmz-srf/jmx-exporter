@@ -12,6 +12,10 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
+      - name: Read version from version.txt
+        id: version
+        run: echo "JMX_EXPORTER_VERSION=$(cat version.txt)" >> $GITHUB_ENV
+
       - uses: actions-ecosystem/action-get-latest-tag@v1
         id: get-latest-tag
 
@@ -42,7 +46,7 @@ jobs:
             type=schedule
             type=ref,event=branch
             type=sha
-            type=raw,value=jmx_exporter-${{ github.event.inputs.jmx_exporter_version || '1.4.0' }}
+            type=raw,value=jmx_exporter-${{ env.JMX_EXPORTER_VERSION }}
             type=raw,value=${{ github.repository.tag_name }}
 
       -   name: Build and push Docker images
@@ -54,6 +58,6 @@ jobs:
             tags: ${{ steps.meta.outputs.tags }}
             labels: ${{ steps.meta.outputs.labels }}
             build-args: |
-              JMX_EXPORTER_VERSION=${{ github.event.inputs.jmx_exporter_version || '1.4.0' }}
+              JMX_EXPORTER_VERSION=${{ env.JMX_EXPORTER_VERSION }}
             platforms: linux/amd64,linux/arm/v7,linux/arm64/v8
-            outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Prometheus jmx-exporter https://prometheus.github.io/jmx_exporter/${{ github.event.inputs.jmx_exporter_version || '1.4.0' }}/,annotation-index.org.opencontainers.image.version=${{ github.event.inputs.jmx_exporter_version || '1.4.0' }}
+            outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Prometheus jmx-exporter https://prometheus.github.io/jmx_exporter/${{ env.JMX_EXPORTER_VERSION }}/,annotation-index.org.opencontainers.image.version=${{ env.JMX_EXPORTER_VERSION }}
