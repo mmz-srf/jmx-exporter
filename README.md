@@ -1,19 +1,23 @@
-### Build the docker image
+# Package for Prometheus jmx exporter
+
+## Build the docker image
 ```bash
 docker build -t jmx-exporter:1.4.0 . --build-arg JMX_EXPORTER_VERSION=1.4.0
 ```
+> The `JMX_EXPORTER_VERSION` defines the Version from [Prometheus JMX Exporter](https://prometheus.github.io/jmx_exporter/1.4.0/)
 
-### Run local tests
+## Run the image locally
 ```bash
-docker run -p 5556:5556 -v $(pwd)/.test/config.yaml:/temp/config.yaml jmx-exporter:1.4.0
+docker run -it -p 5556:5556 -v $(pwd)/example/config.yaml:/temp/config.yaml jmx-exporter:1.4.0
 ```
 
+### Config
+Mount the `config.yaml` at `/temp/config.yaml` or start the container with the desired mount path.
 
-### Config file
-Mount the `config.yaml` at `/temp/config.yaml`
+#### Example config
+Create the config file with [HTTP mode configuretion Rules](https://prometheus.github.io/jmx_exporter/1.4.0/http-mode/rules/)
 
-example config.yaml
-````yaml
+```yaml
 jmxUrl: service:jmx:rmi:///jndi/rmi://127.0.0.1:9999/jmxrmi
 startDelaySeconds: 0
 ssl: false
@@ -24,5 +28,3 @@ includeObjectNames:
   - "java.lang:type=Memory"
   - "java.lang:type=MemoryPool,*"
 ```
-
-https://prometheus.github.io/jmx_exporter/1.4.0/http-mode/rules/

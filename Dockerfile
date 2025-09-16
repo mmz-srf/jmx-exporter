@@ -10,6 +10,7 @@ ENV JMX_EXPORTER_REPOISTORY="https://github.com/prometheus/jmx_exporter"
 # Metadata
 LABEL description="Java JMX to Prometheus exporter"
 LABEL org.opencontainers.image.description="Java JMX to Prometheus exporter"
+LABEL org.opencontainers.image.title="jmx-exporter"
 LABEL org.opencontainers.image.version="${JMX_EXPORTER_VERSION}"
 
 # Create application directory
