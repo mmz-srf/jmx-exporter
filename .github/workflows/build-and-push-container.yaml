@@ -5,6 +5,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      jmx_exporter_version:
+        description: 'JMX Exporter Version'
+        required: false
+        default: '1.4.0'
 
 jobs:
   docker:
@@ -46,3 +51,5 @@ jobs:
             push: true
             tags: ${{ steps.meta.outputs.tags }}
             labels: ${{ steps.meta.outputs.labels }}
+            build-args: |
+              JMX_EXPORTER_VERSION={{ JMX_EXPORTER_VERSION }}
