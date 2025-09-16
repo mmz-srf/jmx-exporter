@@ -14,6 +14,9 @@ LABEL org.opencontainers.image.version="${JMX_EXPORTER_VERSION}"
 # Create application directory
 RUN mkdir -p /opt/jmx_exporter
 
+# Install curl
+RUN apt-get update && apt-get install -y curl
+
 # Download JMX exporter jar and configuration file
 RUN curl -L https://github.com/prometheus/jmx_exporter/releases/download/${JMX_EXPORTER_VERSION}/jmx_prometheus_standalone-${JMX_EXPORTER_VERSION}.jar \
     -o /opt/jmx_exporter/jmx_prometheus_standalone.jar
