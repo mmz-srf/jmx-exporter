@@ -51,7 +51,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=sha
-            type=semver,pattern={{major}}.{{minor}}.{{patch}},prefix=int-,match=v(\d.\d.\d)$,event=tag
+            type=semver,pattern={{major}}.{{minor}}.{{patch}},prefix=int-,match=v(\d.\d.\d)$,event=tag,priority=1200
             type=semver,pattern={{version}},enable=true,value=${{ github.event.inputs.tag }},event=branch
             type=raw,value=latest,event=branch
 
