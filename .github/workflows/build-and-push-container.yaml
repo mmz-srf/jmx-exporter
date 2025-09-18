@@ -52,8 +52,8 @@ jobs:
             type=ref,event=branch
             type=sha
             type=semver,pattern={{major}}.{{minor}}.{{patch}},prefix=int-,match=v(\d.\d.\d)$,priority=1200,event=tag
-            type=raw,enable=true,priority=1100,prefix=,suffix=,value=${{ github.event.inputs.tag }}
-            type=raw,value=latest,enable={{is_default_branch}},priority=900
+            type=semver,pattern={{version}},enable=true,priority=1100,value=${{ github.event.inputs.tag }},event=branch
+            type=raw,value=latest,priority=900
 
       -   name: Build and push Docker images
           id: push
