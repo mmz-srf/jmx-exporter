@@ -28,3 +28,10 @@ includeObjectNames:
   - "java.lang:type=Memory"
   - "java.lang:type=MemoryPool,*"
 ```
+
+## Container release workflow
+| Branch / Tag       | Phase   | Container tag | Rollout           |
+| ------------------ | ------- | ------------- | ----------------- |
+| develop-* (weekly) | **DEV** | dev           | on push           |
+| tag (v0.0.1)       | **INT** | int-0.0.1     | on tag creation   |
+| main               | **PRD** | 0.0.1         | workflow dispatch |
