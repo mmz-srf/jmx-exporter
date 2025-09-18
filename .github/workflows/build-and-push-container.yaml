@@ -50,7 +50,7 @@ jobs:
             ghcr.io/${{ github.repository }}
           tags: |
             type=ref,event=branch
-            type=semver,pattern={{version}},prefix=int-,match=v(\d.\d.\d)$,event=tag,priority=1200
+            type=semver,pattern={{version}},prefix=int-,match=v(\d.\d.\d)$,event=tag
             type=semver,pattern={{version}},value=${{ github.event.inputs.tag }},enable={{is_default_branch}}
             type=semver,pattern={{major}}.{{minor}},value=${{ github.event.inputs.tag }},enable={{is_default_branch}}
             type=semver,pattern={{major}},value=${{ github.event.inputs.tag }},enable={{is_default_branch}}
