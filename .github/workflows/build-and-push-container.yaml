@@ -52,7 +52,7 @@ jobs:
             type=ref,event=branch
             type=sha
             type=semver,pattern={{major}}.{{minor}}.{{patch}},prefix=int-,match=v(\d.\d.\d)$,event=tag,priority=1200
-            type=semver,pattern={{version}},value=${{ github.event.inputs.tag }}
+            type=semver,pattern={{version}},value=${{ github.event.inputs.tag }},event=workflow_dispatch
             type=raw,value=latest,event=branch
 
       -   name: Build and push Docker images
