@@ -54,6 +54,7 @@ jobs:
             type=semver,pattern={{version}},prefix=int-,match=v(\d.\d.\d)$,event=tag,priority=1200
             type=semver,pattern={{version}},value=${{ github.event.inputs.tag }},enable={{is_default_branch}}
             type=raw,value=latest,event=branch
+            type=raw,value=dev,enable=${{ startsWith(github.ref_name, 'develop-') }}
 
       -   name: Build and push Docker images
           id: push
