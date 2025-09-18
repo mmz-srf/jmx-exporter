@@ -14,7 +14,7 @@ on:
 
 
 jobs:
-  docker:
+  build-jmx-exporter-container:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
