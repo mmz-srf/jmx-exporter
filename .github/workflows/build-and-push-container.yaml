@@ -55,7 +55,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}},value=${{ github.event.inputs.tag }},enable={{is_default_branch}}
             type=semver,pattern={{major}},value=${{ github.event.inputs.tag }},enable={{is_default_branch}}
             type=raw,value=latest,event=branch
-            type=raw,value=jmx-exporter-${{ steps.jmx_version.outputs.version }},event=branch
+            type=raw,value=jmx-exporter-${{ steps.jmx_version.outputs.version }},event=branch,enable={{is_default_branch}}
             type=raw,value=dev,enable=${{ startsWith(github.ref_name, 'develop-') }}
 
       -   name: Build and push Docker images
