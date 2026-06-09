@@ -1,0 +1,345 @@
+name: Test JMX Exporter Docker Image
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "Dockerfile"
+      - "jmx_exporter_version.txt"
+      - ".github/workflows/test-jmx-exporter.yml"
+  pull_request:
+    paths:
+      - "Dockerfile"
+      - "jmx_exporter_version.txt"
+      - ".github/workflows/test-jmx-exporter.yml"
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: jmx-exporter
+  JMX_EXPORTER_PORT: 5556
+  JMX_TARGET_PORT: 9999
+
+jobs:
+  # ======================================================================== #
+  # Job 1 – Image quality checks (no runtime needed)
+  # ======================================================================== #
+  image-checks:
+    name: Image Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read version from jmx_exporter_version.txt
+        run: |
+          VERSION=$(cat jmx_exporter_version.txt | tr -d '[:space:]')
+          echo "JMX_EXPORTER_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Building version: $VERSION"
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg JMX_EXPORTER_VERSION=${{ env.JMX_EXPORTER_VERSION }} \
+            --tag ${{ env.IMAGE_NAME }}:test \
+            .
+
+      - name: Verify OCI labels
+        run: |
+          echo "=== Image labels ==="
+          docker inspect ${{ env.IMAGE_NAME }}:test \
+            --format '{{ json .Config.Labels }}' | jq .
+
+          TITLE=$(docker inspect ${{ env.IMAGE_NAME }}:test \
+            --format '{{ index .Config.Labels "org.opencontainers.image.title" }}')
+          [ "$TITLE" = "jmx-exporter" ] || \
+            (echo "ERROR: unexpected title '$TITLE'" && exit 1)
+          echo "✓ title = $TITLE"
+
+          VERSION=$(docker inspect ${{ env.IMAGE_NAME }}:test \
+            --format '{{ index .Config.Labels "org.opencontainers.image.version" }}')
+          [ "$VERSION" = "${{ env.JMX_EXPORTER_VERSION }}" ] || \
+            (echo "ERROR: unexpected version '$VERSION'" && exit 1)
+          echo "✓ version = $VERSION"
+
+      - name: Verify non-root user (UID 1001)
+        run: |
+          USER_ID=$(docker inspect ${{ env.IMAGE_NAME }}:test \
+            --format '{{ .Config.User }}')
+          [ "$USER_ID" = "1001" ] || \
+            (echo "ERROR: expected UID 1001, got '$USER_ID'" && exit 1)
+          echo "✓ user = $USER_ID"
+
+      - name: Verify exposed port ${{ env.JMX_EXPORTER_PORT }}
+        run: |
+          PORTS=$(docker inspect ${{ env.IMAGE_NAME }}:test \
+            --format '{{ json .Config.ExposedPorts }}')
+          echo "$PORTS" | grep -q "${{ env.JMX_EXPORTER_PORT }}/tcp" || \
+            (echo "ERROR: port ${{ env.JMX_EXPORTER_PORT }}/tcp not exposed" && exit 1)
+          echo "✓ port ${{ env.JMX_EXPORTER_PORT }}/tcp exposed"
+
+      - name: Verify JAR is present in image
+        run: |
+          docker run --rm --entrypoint sh ${{ env.IMAGE_NAME }}:test \
+            -c "test -f /opt/jmx_exporter/jmx_prometheus_standalone.jar && \
+                echo '✓ JAR found' || (echo 'ERROR: JAR missing' && exit 1)"
+
+      - name: Verify WORKDIR is /opt/jmx_exporter
+        run: |
+          WORKDIR=$(docker inspect ${{ env.IMAGE_NAME }}:test \
+            --format '{{ .Config.WorkingDir }}')
+          [ "$WORKDIR" = "/opt/jmx_exporter" ] || \
+            (echo "ERROR: unexpected WORKDIR '$WORKDIR'" && exit 1)
+          echo "✓ WORKDIR = $WORKDIR"
+
+  # ======================================================================== #
+  # Job 2 – Integration test with a real JMX target
+  #
+  # Architecture:
+  #   [JVM target]  port 9999 (RMI)
+  #        ↑
+  #   [jmx-exporter container]  port 5556 (HTTP /metrics)
+  #        ↑
+  #   curl assertions
+  # ======================================================================== #
+  integration-test:
+    name: Integration Test (with JMX target)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Read version from jmx_exporter_version.txt
+        run: |
+          VERSION=$(cat jmx_exporter_version.txt | tr -d '[:space:]')
+          echo "JMX_EXPORTER_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Building version: $VERSION"
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg JMX_EXPORTER_VERSION=${{ env.JMX_EXPORTER_VERSION }} \
+            --tag ${{ env.IMAGE_NAME }}:test \
+            .
+
+      # ------------------------------------------------------------------ #
+      # Spin up a JVM with JMX exposed on port 9999
+      # We use a long-running no-op Java process as a scrape target.
+      # ------------------------------------------------------------------ #
+      - name: Start JVM target with JMX on port ${{ env.JMX_TARGET_PORT }}
+        run: |
+          # Write a tiny Java app that sleeps indefinitely
+          mkdir -p /tmp/jmx-target
+          cat > /tmp/jmx-target/JmxTarget.java << 'EOF'
+          public class JmxTarget {
+            public static void main(String[] args) throws Exception {
+              System.out.println("JMX target started, sleeping...");
+              Thread.sleep(Long.MAX_VALUE);
+            }
+          }
+          EOF
+          cd /tmp/jmx-target
+          javac JmxTarget.java
+
+          nohup java \
+            -Dcom.sun.management.jmxremote=true \
+            -Dcom.sun.management.jmxremote.port=${{ env.JMX_TARGET_PORT }} \
+            -Dcom.sun.management.jmxremote.rmi.port=${{ env.JMX_TARGET_PORT }} \
+            -Dcom.sun.management.jmxremote.local.only=false \
+            -Dcom.sun.management.jmxremote.authenticate=false \
+            -Dcom.sun.management.jmxremote.ssl=false \
+            -Djava.rmi.server.hostname=127.0.0.1 \
+            JmxTarget > /tmp/jmx-target/jvm.log 2>&1 &
+
+          echo "JVM PID: $!"
+          echo $! > /tmp/jmx-target/jvm.pid
+
+      - name: Wait for JMX port to open
+        run: |
+          echo "Waiting for JMX port ${{ env.JMX_TARGET_PORT }}..."
+          for i in $(seq 1 30); do
+            if nc -z 127.0.0.1 ${{ env.JMX_TARGET_PORT }} 2>/dev/null; then
+              echo "✓ JMX port open (attempt $i)"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "ERROR: JMX port never opened"
+          cat /tmp/jmx-target/jvm.log
+          exit 1
+
+      # ------------------------------------------------------------------ #
+      # Write the config from the repository's example — using host network
+      # so the container can reach 127.0.0.1:9999 on the runner.
+      # ------------------------------------------------------------------ #
+      - name: Write example config.yaml
+        run: |
+          mkdir -p /tmp/jmx-config
+          cat > /tmp/jmx-config/config.yaml << 'EOF'
+          jmxUrl: service:jmx:rmi:///jndi/rmi://127.0.0.1:9999/jmxrmi
+          startDelaySeconds: 0
+          ssl: false
+          includeObjectNames:
+            - "java.lang:type=ClassLoading"
+            - "java.lang:type=Compilation"
+            - "java.lang:type=GarbageCollector,*"
+            - "java.lang:type=Memory"
+            - "java.lang:type=MemoryPool,*"
+          EOF
+
+      - name: Start jmx-exporter container (host network)
+        run: |
+          docker run -d \
+            --name jmx-exporter-test \
+            --network host \
+            --volume /tmp/jmx-config:/temp:ro \
+            ${{ env.IMAGE_NAME }}:test \
+            "${{ env.JMX_EXPORTER_PORT }}" "/temp/config.yaml"
+
+      - name: Wait for /metrics to become available
+        run: |
+          echo "Waiting for exporter on port ${{ env.JMX_EXPORTER_PORT }}..."
+          for i in $(seq 1 30); do
+            HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
+              http://127.0.0.1:${{ env.JMX_EXPORTER_PORT }}/metrics || true)
+            if [ "$HTTP" = "200" ]; then
+              echo "✓ Exporter ready (attempt $i)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "ERROR: Exporter did not become ready within 60 seconds"
+          docker logs jmx-exporter-test
+          exit 1
+
+      # ------------------------------------------------------------------ #
+      # Assertions
+      # ------------------------------------------------------------------ #
+      - name: Assert /metrics returns HTTP 200
+        run: |
+          HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
+            http://127.0.0.1:${{ env.JMX_EXPORTER_PORT }}/metrics)
+          [ "$HTTP" = "200" ] || (echo "ERROR: got HTTP $HTTP" && exit 1)
+          echo "✓ HTTP 200"
+
+      - name: Assert Prometheus text format (HELP + TYPE lines)
+        run: |
+          OUTPUT=$(curl -sf http://127.0.0.1:${{ env.JMX_EXPORTER_PORT }}/metrics)
+          echo "$OUTPUT" | grep -q "^# HELP" || \
+            (echo "ERROR: no '# HELP' lines" && exit 1)
+          echo "$OUTPUT" | grep -q "^# TYPE" || \
+            (echo "ERROR: no '# TYPE' lines" && exit 1)
+          echo "✓ Prometheus text format valid"
+
+      - name: Assert java.lang MBean metrics are scraped
+        run: |
+          declare -A EXPECTED=(
+            ["java_lang_Memory_HeapMemoryUsage_used"]="Memory"
+            ["java_lang_ClassLoading_LoadedClassCount"]="ClassLoading"
+          )
+
+          FAILED=0
+
+          for METRIC in "${!EXPECTED[@]}"; do
+            if grep -q "$METRIC" <<< "$OUTPUT"; then
+              echo "✓ Found: $METRIC"
+            else
+              echo "✗ Missing: $METRIC"
+              FAILED=$((FAILED + 1))
+            fi
+          done
+
+          # Check GC metrics
+          if grep -q "GarbageCollector" <<< "$OUTPUT"; then
+            echo "✓ Found GarbageCollector metrics"
+          else
+            echo "✗ Missing GarbageCollector metrics"
+            FAILED=$((FAILED + 1))
+          fi
+
+          # Check MemoryPool metrics
+          if grep -q "MemoryPool" <<< "$OUTPUT"; then
+            echo "✓ Found MemoryPool metrics"
+          else
+            echo "✗ Missing MemoryPool metrics"
+            FAILED=$((FAILED + 1))
+          fi
+
+      - name: Assert jmx_exporter_build_info present
+        run: |
+          OUTPUT=$(curl -sf http://127.0.0.1:${{ env.JMX_EXPORTER_PORT }}/metrics)
+          echo "$OUTPUT" | grep -q "jmx_exporter_build_info" || \
+            (echo "ERROR: jmx_exporter_build_info not found" && exit 1)
+          echo "✓ jmx_exporter_build_info found"
+          # Print the version reported by the exporter itself
+          echo "$OUTPUT" | grep "jmx_exporter_build_info" | head -3
+
+      - name: Print full metrics output (first 60 lines)
+        run: |
+          echo "=== /metrics (first 60 lines) ==="
+          curl -sf http://127.0.0.1:${{ env.JMX_EXPORTER_PORT }}/metrics | head -60
+
+      # ------------------------------------------------------------------ #
+      # Cleanup
+      # ------------------------------------------------------------------ #
+      - name: Print container logs (always)
+        if: always()
+        run: docker logs jmx-exporter-test 2>&1 || true
+
+      - name: Print JVM target logs (always)
+        if: always()
+        run: cat /tmp/jmx-target/jvm.log 2>/dev/null || true
+
+      - name: Stop and remove container
+        if: always()
+        run: |
+          docker stop jmx-exporter-test 2>/dev/null || true
+          docker rm   jmx-exporter-test 2>/dev/null || true
+
+      - name: Kill JVM target
+        if: always()
+        run: |
+          PID=$(cat /tmp/jmx-target/jvm.pid 2>/dev/null || true)
+          [ -n "$PID" ] && kill "$PID" 2>/dev/null || true
+
+  # ======================================================================== #
+  # Job 3 – Verify build-arg passthrough
+  # ======================================================================== #
+  test-build-arg:
+    name: Test JMX_EXPORTER_VERSION build arg
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read version from jmx_exporter_version.txt
+        run: |
+          VERSION=$(cat jmx_exporter_version.txt | tr -d '[:space:]')
+          echo "JMX_EXPORTER_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Building version: $VERSION"
+
+      - name: Build with version from jmx_exporter_version.txt
+        run: |
+          docker build \
+            --build-arg JMX_EXPORTER_VERSION=${{ env.JMX_EXPORTER_VERSION }} \
+            --tag jmx-exporter:${{ env.JMX_EXPORTER_VERSION }} \
+            .
+
+      - name: Confirm version label matches jmx_exporter_version.txt
+        run: |
+          VERSION=$(docker inspect jmx-exporter:${{ env.JMX_EXPORTER_VERSION }} \
+            --format '{{ index .Config.Labels "org.opencontainers.image.version" }}')
+          [ "$VERSION" = "${{ env.JMX_EXPORTER_VERSION }}" ] || \
+            (echo "ERROR: label mismatch, got '$VERSION'" && exit 1)
+          echo "✓ version label = $VERSION"

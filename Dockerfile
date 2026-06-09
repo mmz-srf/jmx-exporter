@@ -5,13 +5,15 @@ ARG JMX_EXPORTER_VERSION=1.6.0
 ENV JMX_EXPORTER_VERSION=${JMX_EXPORTER_VERSION}
 ENV JMX_EXPORTER_PORT=5556
 ENV APP_NAME="jmx-exporter"
-ENV JMX_EXPORTER_REPOISTORY="https://github.com/prometheus/jmx_exporter"
+ENV JMX_EXPORTER_REPOSITORY="https://github.com/prometheus/jmx_exporter"
 
 # Metadata
 LABEL description="Java JMX to Prometheus exporter"
 LABEL org.opencontainers.image.description="Java JMX to Prometheus exporter"
 LABEL org.opencontainers.image.title="jmx-exporter"
 LABEL org.opencontainers.image.version="${JMX_EXPORTER_VERSION}"
+
+RUN apk add --no-cache curl
 
 # Create application directory
 RUN mkdir -p /opt/jmx_exporter
@@ -20,8 +22,8 @@ RUN mkdir -p /opt/jmx_exporter
 RUN curl -fL https://github.com/prometheus/jmx_exporter/releases/download/v${JMX_EXPORTER_VERSION}/jmx_prometheus_standalone-${JMX_EXPORTER_VERSION}.jar \
     -o /opt/jmx_exporter/jmx_prometheus_standalone.jar
 
-# Use a non-root user
-RUN useradd -u 1001 -r -g root -d /opt/jmx_exporter jmxuser
+# Create non-root user
+RUN adduser -D -u 1001 -h /opt/jmx_exporter jmxuser
 RUN chown -R 1001:root /opt/jmx_exporter
 
 USER 1001
