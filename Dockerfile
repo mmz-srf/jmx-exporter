@@ -1,4 +1,4 @@
-FROM eclipse-temurin:25-jre-alpine
+FROM eclipse-temurin:25-jre
 
 # Set environment variables
 ARG JMX_EXPORTER_VERSION=1.6.0
