@@ -22,11 +22,11 @@ RUN mkdir -p /opt/jmx_exporter
 RUN curl -fL https://github.com/prometheus/jmx_exporter/releases/download/v${JMX_EXPORTER_VERSION}/jmx_prometheus_standalone-${JMX_EXPORTER_VERSION}.jar \
     -o /opt/jmx_exporter/jmx_prometheus_standalone.jar
 
-# Use a non-root user
-RUN useradd -u 1001 -r -g root -d /opt/jmx_exporter jmxuser
+# Create non-root user
+RUN adduser -D -u 1001 -h /opt/jmx_exporter jmxuser
 RUN chown -R 1001:root /opt/jmx_exporter
 
-USER 1001
+USER 1001:0
 WORKDIR /opt/jmx_exporter
 
 EXPOSE ${JMX_EXPORTER_PORT}
