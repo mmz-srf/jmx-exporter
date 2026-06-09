@@ -1,11 +1,11 @@
-FROM eclipse-temurin:8-jre
+FROM eclipse-temurin:25-jre
 
 # Set environment variables
-ARG JMX_EXPORTER_VERSION=1.4.0
+ARG JMX_EXPORTER_VERSION=1.6.0
 ENV JMX_EXPORTER_VERSION=${JMX_EXPORTER_VERSION}
 ENV JMX_EXPORTER_PORT=5556
 ENV APP_NAME="jmx-exporter"
-ENV JMX_EXPORTER_REPOISTORY="https://github.com/prometheus/jmx_exporter"
+ENV JMX_EXPORTER_REPOSITORY="https://github.com/prometheus/jmx_exporter"
 
 # Metadata
 LABEL description="Java JMX to Prometheus exporter"
@@ -13,15 +13,26 @@ LABEL org.opencontainers.image.description="Java JMX to Prometheus exporter"
 LABEL org.opencontainers.image.title="jmx-exporter"
 LABEL org.opencontainers.image.version="${JMX_EXPORTER_VERSION}"
 
+RUN apt-get update && apt-get install -y curl
+
 # Create application directory
 RUN mkdir -p /opt/jmx_exporter
 
 # Download JMX exporter jar and configuration file
-RUN curl -fL https://github.com/prometheus/jmx_exporter/releases/download/${JMX_EXPORTER_VERSION}/jmx_prometheus_standalone-${JMX_EXPORTER_VERSION}.jar \
+RUN curl -fL https://github.com/prometheus/jmx_exporter/releases/download/v${JMX_EXPORTER_VERSION}/jmx_prometheus_standalone-${JMX_EXPORTER_VERSION}.jar \
     -o /opt/jmx_exporter/jmx_prometheus_standalone.jar
 
-# Use a non-root user
-RUN useradd -u 1001 -r -g root -d /opt/jmx_exporter jmxuser
+RUN apt-get remove -y curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd \
+    --uid 1001 \
+    --home-dir /opt/jmx_exporter \
+    --system \
+    --no-create-home \
+    jmxuser
 RUN chown -R 1001:root /opt/jmx_exporter
 
 USER 1001
