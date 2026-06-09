@@ -5,7 +5,7 @@ ARG JMX_EXPORTER_VERSION=1.6.0
 ENV JMX_EXPORTER_VERSION=${JMX_EXPORTER_VERSION}
 ENV JMX_EXPORTER_PORT=5556
 ENV APP_NAME="jmx-exporter"
-ENV JMX_EXPORTER_REPOISTORY="https://github.com/prometheus/jmx_exporter"
+ENV JMX_EXPORTER_REPOSITORY="https://github.com/prometheus/jmx_exporter"
 
 # Metadata
 LABEL description="Java JMX to Prometheus exporter"
