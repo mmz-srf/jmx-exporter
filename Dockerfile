@@ -1,4 +1,4 @@
-FROM eclipse-temurin:8-jre
+FROM eclipse-temurin:25-jre-alpine
 
 # Set environment variables
 ARG JMX_EXPORTER_VERSION=1.6.0
@@ -17,7 +17,7 @@ LABEL org.opencontainers.image.version="${JMX_EXPORTER_VERSION}"
 RUN mkdir -p /opt/jmx_exporter
 
 # Download JMX exporter jar and configuration file
-RUN curl -fL https://github.com/prometheus/jmx_exporter/releases/download/${JMX_EXPORTER_VERSION}/jmx_prometheus_standalone-${JMX_EXPORTER_VERSION}.jar \
+RUN curl -fL https://github.com/prometheus/jmx_exporter/releases/download/v${JMX_EXPORTER_VERSION}/jmx_prometheus_standalone-${JMX_EXPORTER_VERSION}.jar \
     -o /opt/jmx_exporter/jmx_prometheus_standalone.jar
 
 # Use a non-root user
