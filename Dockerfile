@@ -1,4 +1,4 @@
-FROM eclipse-temurin:8-jre
+FROM eclipse-temurin:25-jre-alpine
 
 # Set environment variables
 ARG JMX_EXPORTER_VERSION=1.6.0
@@ -12,6 +12,8 @@ LABEL description="Java JMX to Prometheus exporter"
 LABEL org.opencontainers.image.description="Java JMX to Prometheus exporter"
 LABEL org.opencontainers.image.title="jmx-exporter"
 LABEL org.opencontainers.image.version="${JMX_EXPORTER_VERSION}"
+
+RUN apk add --no-cache curl
 
 # Create application directory
 RUN mkdir -p /opt/jmx_exporter
