@@ -1,5 +1,11 @@
 # Package for Prometheus jmx exporter
 
+> [!WARNING]
+> This repository's Docker image is deprecated. Prometheus now provides its own hardened Docker image at https://hub.docker.com/hardened-images/catalog/dhi/jmx-exporter, and users should prefer that image for new deployments.
+
+
+
+
 ## Build the docker image
 ```bash
 docker build -t jmx-exporter:1.4.0 . --build-arg JMX_EXPORTER_VERSION=1.4.0
