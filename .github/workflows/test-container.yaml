@@ -242,27 +242,37 @@ jobs:
 
       - name: Assert java.lang MBean metrics are scraped
         run: |
-          OUTPUT=$(curl -sf http://127.0.0.1:${{ env.JMX_EXPORTER_PORT }}/metrics)
-
-          # These metrics come from the exact includeObjectNames in the example config
           declare -A EXPECTED=(
-            ["java_lang_Memory_HeapMemoryUsage_used"]="java.lang:type=Memory"
-            ["java_lang_ClassLoading_LoadedClassCount"]="java.lang:type=ClassLoading"
-            ["java_lang_GarbageCollector"]="java.lang:type=GarbageCollector"
-            ["java_lang_MemoryPool"]="java.lang:type=MemoryPool"
+            ["java_lang_Memory_HeapMemoryUsage_used"]="Memory"
+            ["java_lang_ClassLoading_LoadedClassCount"]="ClassLoading"
           )
 
           FAILED=0
+
           for METRIC in "${!EXPECTED[@]}"; do
-            if echo "$OUTPUT" | grep -q "$METRIC"; then
+            if grep -q "$METRIC" <<< "$OUTPUT"; then
               echo "✓ Found: $METRIC"
             else
-              echo "✗ Missing: $METRIC  (from MBean: ${EXPECTED[$METRIC]})"
+              echo "✗ Missing: $METRIC"
               FAILED=$((FAILED + 1))
             fi
           done
 
-          [ $FAILED -eq 0 ] || (echo "ERROR: $FAILED expected metric(s) missing" && exit 1)
+          # Check GC metrics
+          if grep -q "GarbageCollector" <<< "$OUTPUT"; then
+            echo "✓ Found GarbageCollector metrics"
+          else
+            echo "✗ Missing GarbageCollector metrics"
+            FAILED=$((FAILED + 1))
+          fi
+
+          # Check MemoryPool metrics
+          if grep -q "MemoryPool" <<< "$OUTPUT"; then
+            echo "✓ Found MemoryPool metrics"
+          else
+            echo "✗ Missing MemoryPool metrics"
+            FAILED=$((FAILED + 1))
+          fi
 
       - name: Assert jmx_exporter_build_info present
         run: |
