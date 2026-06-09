@@ -22,7 +22,7 @@ RUN mkdir -p /opt/jmx_exporter
 RUN curl -fL https://github.com/prometheus/jmx_exporter/releases/download/v${JMX_EXPORTER_VERSION}/jmx_prometheus_standalone-${JMX_EXPORTER_VERSION}.jar \
     -o /opt/jmx_exporter/jmx_prometheus_standalone.jar
 
-RUN apt-remove -y curl && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-remove -y curl && apt-get clean
 
 # Create non-root user
 RUN useradd -D -u 1001 -h /opt/jmx_exporter jmxuser
