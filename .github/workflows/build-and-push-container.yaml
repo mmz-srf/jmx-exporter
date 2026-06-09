@@ -68,5 +68,5 @@ jobs:
             labels: ${{ steps.meta.outputs.labels }}
             build-args: |
               JMX_EXPORTER_VERSION=${{ steps.jmx_version.outputs.version }}
-            platforms: linux/amd64,linux/arm64/v8
+            platforms: linux/amd64,linux/arm64/v8,windows/amd64
             outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Prometheus jmx-exporter https://prometheus.github.io/jmx_exporter/${{ steps.jmx_version.outputs.version }}/,annotation-index.org.opencontainers.image.version=${{ steps.jmx_version.outputs.version }}
