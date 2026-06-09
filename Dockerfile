@@ -26,7 +26,7 @@ RUN curl -fL https://github.com/prometheus/jmx_exporter/releases/download/v${JMX
 RUN adduser -D -u 1001 -h /opt/jmx_exporter jmxuser
 RUN chown -R 1001:root /opt/jmx_exporter
 
-USER 1001:0
+USER 1001
 WORKDIR /opt/jmx_exporter
 
 EXPOSE ${JMX_EXPORTER_PORT}
