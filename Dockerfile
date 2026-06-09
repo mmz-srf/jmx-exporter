@@ -27,7 +27,12 @@ RUN apt-get remove -y curl && \
     rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
-RUN useradd -D -u 1001 -h /opt/jmx_exporter jmxuser
+RUN useradd \
+    --uid 1001 \
+    --home-dir /opt/jmx_exporter \
+    --system \
+    --no-create-home \
+    jmxuser
 RUN chown -R 1001:root /opt/jmx_exporter
 
 USER 1001
