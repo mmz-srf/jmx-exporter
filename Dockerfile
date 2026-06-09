@@ -1,4 +1,4 @@
-FROM eclipse-temurin:25-jre-alpine
+FROM eclipse-temurin:25-jre
 
 # Set environment variables
 ARG JMX_EXPORTER_VERSION=1.6.0
@@ -13,8 +13,6 @@ LABEL org.opencontainers.image.description="Java JMX to Prometheus exporter"
 LABEL org.opencontainers.image.title="jmx-exporter"
 LABEL org.opencontainers.image.version="${JMX_EXPORTER_VERSION}"
 
-RUN apk add --no-cache curl
-
 # Create application directory
 RUN mkdir -p /opt/jmx_exporter
 
@@ -23,7 +21,7 @@ RUN curl -fL https://github.com/prometheus/jmx_exporter/releases/download/v${JMX
     -o /opt/jmx_exporter/jmx_prometheus_standalone.jar
 
 # Create non-root user
-RUN adduser -D -u 1001 -h /opt/jmx_exporter jmxuser
+RUN useradd -D -u 1001 -h /opt/jmx_exporter jmxuser
 RUN chown -R 1001:root /opt/jmx_exporter
 
 USER 1001
